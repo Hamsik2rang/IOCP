@@ -3,10 +3,8 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-# No need because will be used CMake
-*.sln
-*.vcxproj
-*.vcxproj.filters
+# For CMake
+_builds
 
 # User-specific files
 *.rsuser
