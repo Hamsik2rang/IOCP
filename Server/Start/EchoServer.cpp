@@ -16,3 +16,11 @@ void EchoServer::OnReceive(const uint32_t clientIndex, const uint32_t size, cons
 {
 	std::cout << "Recv :: Client : " << clientIndex << "(Index) :: " << pData << " (" << size << ")Bytes\n";
 }
+
+void EchoServer::Run(uint32_t MAX_CLIENT)
+{
+	m_isProcessRun = true;
+
+
+	StartServer(MAX_CLIENT);
+}

@@ -4,7 +4,8 @@
 #include <thread>
 #include <vector>
 
-#include "../Types.h"
+#include "Types.h"
+#include "ClientInfo.hpp"
 
 #define _UNUSED_PACKET_HEADER
 
@@ -16,23 +17,22 @@ private:
 
 	SOCKET			m_listenSocket;
 	std::thread		m_accepterThread;
-	int				m_clientCnt = 0;
-	HANDLE			m_IOCPHandle = INVALID_HANDLE_VALUE;
+	int				m_clientCount = 0;
+	HANDLE			m_hIOCP = INVALID_HANDLE_VALUE;
 	bool			m_isWorkerRun = true;
 	bool			m_isAccepterRun = true;
 	char			m_socketBuf[MAX_SOCKBUF] = { 0 };
 
-	void CreateClient(const uint32_t maxClientCount);
-	bool CreateWorkerThread();
-	bool CreateAccepterThread();
-	ClientInfo* GetEmptyClientInfo();
-	bool BindIOCompletionPort(ClientInfo* pClientInfo);
-	bool BindRecv(ClientInfo* pClientInfo);
-	bool SendMsg(ClientInfo* pClientInfo, char* pMsg, int msgLen);
+	void createClient(const uint32_t maxClientCount);
+	bool createWorkerThread();
+	bool createAccepterThread();
+	ClientInfo* getEmptyClientInfo();
+	ClientInfo* getClientInfo(uint32_t sessionIndex);
+	bool sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen);
 
-	void WorkerThread();
-	void AccepterThread();
-	void CloseSocket(ClientInfo* pClientInfo, bool isForce = false);
+	void workerThread();
+	void accepterThread();
+	void closeSocket(ClientInfo* pClientInfo, bool isForce = false);
 
 public:
 	IOCPServer();

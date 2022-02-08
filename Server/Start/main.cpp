@@ -5,7 +5,7 @@
 #include <string>
 
 const uint16_t SERVER_PORT = 11021;
-const uint16_t MAX_CLIENT = 100;		//총 접속할수 있는 클라이언트 수
+const uint32_t MAX_CLIENT = 100;		//총 접속할수 있는 클라이언트 수
 
 int main()
 {
@@ -17,7 +17,7 @@ int main()
 	//소켓과 서버 주소를 연결하고 등록.
 	IOCPEcho.BindandListen(SERVER_PORT);
 
-	IOCPEcho.StartServer(MAX_CLIENT);
+	IOCPEcho.Run(MAX_CLIENT);
 
 	while (true)
 	{
