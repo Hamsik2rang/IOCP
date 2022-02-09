@@ -101,6 +101,7 @@ void IOCPServer::DestroyThread()
 	}
 
 	m_isAccepterRun = false;
+	closesocket(m_listenSocket);
 	if (m_accepterThread.joinable())
 	{
 		m_accepterThread.join();

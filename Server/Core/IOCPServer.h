@@ -28,11 +28,13 @@ private:
 	bool createAccepterThread();
 	ClientInfo* getEmptyClientInfo();
 	ClientInfo* getClientInfo(uint32_t sessionIndex);
-	bool sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen);
 
 	void workerThread();
 	void accepterThread();
 	void closeSocket(ClientInfo* pClientInfo, bool isForce = false);
+
+protected:
+	bool sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen);
 
 public:
 	IOCPServer();

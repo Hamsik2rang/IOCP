@@ -31,10 +31,12 @@ int main()
 		}
 		else
 		{
-			std::cout << "Invalid command ignored.\n";
+			std::cout << "Ignore :: Invalid command\n";
 		}
 	}
 
-	IOCPEcho.DestroyThread();
+	IOCPEcho.End();
+	std::cout << "OK :: Server finished.\n";
+
 	return 0;
 }
