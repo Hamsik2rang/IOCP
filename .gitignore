@@ -6,6 +6,7 @@
 # For CMake
 _builds
 out
+CMakeSettings.json
 
 # User-specific files
 *.rsuser
