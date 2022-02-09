@@ -1,5 +1,5 @@
 #Root CMakeLists.txt
-cmake_minimum_required(VERSION 3.22.2)
+cmake_minimum_required(VERSION 3.21)
 
 project(IOCP LANGUAGES CXX VERSION 0.0.4)
 
