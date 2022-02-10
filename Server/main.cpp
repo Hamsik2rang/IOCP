@@ -19,9 +19,9 @@ int main()
 
 	IOCPEcho.Run(MAX_CLIENT);
 
+	std::cout << "Whenever type Q / q to quit" << "\n";
 	while (true)
 	{
-		printf("Type Q/q to quit: ");
 		std::string input;
 		std::cin >> input;
 

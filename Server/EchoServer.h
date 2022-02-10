@@ -23,7 +23,7 @@ public:
 	void OnClose(const uint32_t clientIndex) override;
 	void OnReceive(const uint32_t clientIndex, const uint32_t size, const char* pData) override;
 
-	void Run(uint32_t MAX_CLIENT);
+	void Run(uint32_t maxClient);
 	void End();
 };
 

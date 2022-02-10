@@ -1,6 +1,8 @@
 #include "EchoServer.h"
 
 #include <iostream>
+#include <utility>
+#include <cassert>
 
 void EchoServer::OnConnect(uint32_t clientIndex)
 {
@@ -50,6 +52,7 @@ void EchoServer::processPacket()
 		auto packet = dequeuePacket();
 		if (0 != packet.m_dataSize)
 		{
+			assert(nullptr != packet.m_pData);
 			sendMsg(packet.m_sessionIndex, packet.m_pData, packet.m_dataSize);
 		}
 		else
@@ -63,14 +66,15 @@ Packet EchoServer::dequeuePacket()
 {
 	Packet packet;
 	std::lock_guard<std::mutex> lock(m_mutex);
+
 	if (m_packetQueue.empty())
 	{
 		return packet;
 	}
 
-	auto frontPacket = m_packetQueue.front();
+	Packet frontPacket = m_packetQueue.front();
 	packet.Set(frontPacket);
-
+	
 	frontPacket.Release();
 	m_packetQueue.pop();
 
