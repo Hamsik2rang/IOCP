@@ -7,4 +7,5 @@ add_executable(Server
 	EchoServer.cpp
 
 	./Core/IOCPServer.cpp
-)
+	./Core/ClientInfo.cpp
+ "Core/ClientInfo.cpp")
