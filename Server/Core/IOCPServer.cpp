@@ -209,7 +209,7 @@ void IOCPServer::workerThread()
 			{
 				delete[] pOverlappedEx->m_wsaBuf.buf;
 				delete pOverlappedEx;
-				pClientInfo->SendCompeleted(byteTransferred);
+				pClientInfo->OnSendComplete(byteTransferred);
 			}
 			break;
 			// 유효하지 않은 작업코드가 저장되어 있는 경우
@@ -249,6 +249,22 @@ void IOCPServer::accepterThread()
 		}
 		OnConnect(pClientInfo->GetIndex());
 		++m_clientCount;
+	}
+}
+
+void IOCPServer::senderThread()
+{
+	while (m_isSenderRun)
+	{
+		for (auto& client : m_clientInfos)
+		{
+			if (!client.IsConnected())
+			{
+				continue;
+			}
+			client.SendIO();
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 

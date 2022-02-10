@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "Types.h"
-#include "ClientInfo.hpp"
+#include "ClientInfo.h"
 
 #define _UNUSED_PACKET_HEADER
 
@@ -17,10 +17,12 @@ private:
 
 	SOCKET			m_listenSocket;
 	std::thread		m_accepterThread;
+	std::thread		m_senderThread;
 	int				m_clientCount = 0;
 	HANDLE			m_hIOCP = INVALID_HANDLE_VALUE;
 	bool			m_isWorkerRun = true;
 	bool			m_isAccepterRun = true;
+	bool			m_isSenderRun = true;
 	char			m_socketBuf[MAX_SOCKBUF] = { 0 };
 
 	void createClient(const uint32_t maxClientCount);
@@ -31,6 +33,7 @@ private:
 
 	void workerThread();
 	void accepterThread();
+	void senderThread();
 	void closeSocket(ClientInfo* pClientInfo, bool isForce = false);
 
 protected:
