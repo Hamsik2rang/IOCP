@@ -1,31 +1,28 @@
 #pragma once
 
 #include <mutex>
+#include <queue>
+#include <utility>
 
 #include "Types.h"
 
-class ClientInfo
+class Session
 {
 private:
-
-
-	SOCKET				m_socket;
-	OverlappedEx		m_recvOverlappedEx;
-	OverlappedEx		m_sendOverlappedEx;
-	uint32_t			m_index = 0;
-	char				m_recvBuf[MAX_SOCKBUF];
-
-	// TODO: Check constructor error.
-	std::mutex			m_mutex;
-	char				m_dataBuf[MAX_SENDBUF_SIZE];
-	char				m_sendingBuf[MAX_SENDBUF_SIZE];
-	uint32_t			m_bufPos;
-	bool				m_isSending = false;
+	SOCKET			m_socket;
+	OverlappedEx	m_recvOverlappedEx;
+	uint32_t		m_index = 0;
+	char			m_recvBuf[MAX_SOCKBUF];
+	
+	std::mutex		m_mutex;
+	bool			m_isSending = false;
+	
+	std::queue<OverlappedEx*> m_pSendDataQueue;
 
 public:
-	ClientInfo();
-	ClientInfo(uint32_t index);
-	~ClientInfo();
+	Session();
+	Session(uint32_t index);
+	~Session();
 	void InitIndex(uint32_t index);
 	
 

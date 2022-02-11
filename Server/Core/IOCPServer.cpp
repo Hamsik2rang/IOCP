@@ -7,7 +7,7 @@ IOCPServer::IOCPServer()
 
 IOCPServer::~IOCPServer()
 {
-	for (auto& client : m_pClientInfos)
+	for (auto& client : m_pSessions)
 	{
 		if (nullptr != client)
 		{
@@ -137,7 +137,7 @@ void IOCPServer::createClient(const uint32_t maxClientCount)
 {
 	for (uint32_t i = 0; i < maxClientCount; ++i)
 	{
-		m_pClientInfos.emplace_back(new ClientInfo(i));
+		m_pSessions.emplace_back(new Session(i));
 	}
 }
 
@@ -169,9 +169,9 @@ bool IOCPServer::createSenderThread()
 	return true;
 }
 
-ClientInfo* IOCPServer::getEmptyClientInfo()
+Session* IOCPServer::getEmptySession()
 {
-	for (auto& client : m_pClientInfos)
+	for (auto& client : m_pSessions)
 	{
 		if (!client->IsConnected())
 		{
@@ -182,29 +182,29 @@ ClientInfo* IOCPServer::getEmptyClientInfo()
 	return nullptr;
 }
 
-ClientInfo* IOCPServer::getClientInfo(uint32_t sessionIndex)
+Session* IOCPServer::getSession(uint32_t sessionIndex)
 {
-	return m_pClientInfos[sessionIndex];
+	return m_pSessions[sessionIndex];
 }
 
 bool IOCPServer::sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen)
 {
-	auto pClientInfo = getClientInfo(sessionIndex);
+	auto pSession = getSession(sessionIndex);
 
-	return pClientInfo->SendMsg(pMsg, msgLen);
+	return pSession->SendMsg(pMsg, msgLen);
 }
 
 void IOCPServer::workerThread()
 {
 	DWORD byteTransferred		(0);
-	ClientInfo* pClientInfo		(nullptr);
+	Session* pSession		(nullptr);
 	LPOVERLAPPED lpOverlapped	(nullptr);
 
 	while (m_isWorkerRun)
 	{
 		bool isSucceed = GetQueuedCompletionStatus(m_hIOCP,
 			&byteTransferred, 
-			(PULONG_PTR)&pClientInfo, 
+			(PULONG_PTR)&pSession, 
 			&lpOverlapped, 
 			INFINITE);
 
@@ -223,7 +223,7 @@ void IOCPServer::workerThread()
 		// Client가 접속 종료
 		if (false == isSucceed || (true == isSucceed && 0 == byteTransferred))
 		{
-			closeSocket(pClientInfo);
+			closeSocket(pSession);
 			continue;
 		}
 
@@ -233,8 +233,8 @@ void IOCPServer::workerThread()
 			// Overlapped Receive 작업 후처리
 		case eIOOperation::RECV:
 			{
-				OnReceive(pClientInfo->GetIndex(), byteTransferred, pClientInfo->RecvBuffer());
-				pClientInfo->BindRecv();
+				OnReceive(pSession->GetIndex(), byteTransferred, pSession->RecvBuffer());
+				pSession->BindRecv();
 			}
 			break;
 			// Overlapped Send 작업 후처리
@@ -242,13 +242,13 @@ void IOCPServer::workerThread()
 			{
 				delete[] pOverlappedEx->m_wsaBuf.buf;
 				delete pOverlappedEx;
-				pClientInfo->OnSendComplete(byteTransferred);
+				pSession->OnSendComplete(byteTransferred);
 			}
 			break;
 			// 유효하지 않은 작업코드가 저장되어 있는 경우
 		default:
 			{
-				std::cerr << "Error :: Invalid Socket Operation :: Socket(" << (int)pClientInfo->GetIndex() << ")\n";
+				std::cerr << "Error :: Invalid Socket Operation :: Socket(" << (int)pSession->GetIndex() << ")\n";
 			}
 			break;
 		}
@@ -262,8 +262,8 @@ void IOCPServer::accepterThread()
 
 	while (m_isAccepterRun)
 	{
-		ClientInfo* pClientInfo = getEmptyClientInfo();
-		if (!pClientInfo)
+		Session* pSession = getEmptySession();
+		if (!pSession)
 		{
 			std::cerr << "Error :: Client Full\n";
 			break;
@@ -275,12 +275,12 @@ void IOCPServer::accepterThread()
 			continue;
 		}
 
-		if (false == pClientInfo->OnConnect(m_hIOCP, clientSocket))
+		if (false == pSession->OnConnect(m_hIOCP, clientSocket))
 		{
-			pClientInfo->Close(true);
+			pSession->Close(true);
 			break;
 		}
-		OnConnect(pClientInfo->GetIndex());
+		OnConnect(pSession->GetIndex());
 		++m_clientCount;
 	}
 }
@@ -289,7 +289,7 @@ void IOCPServer::senderThread()
 {
 	while (m_isSenderRun)
 	{
-		for (auto& client : m_pClientInfos)
+		for (auto& client : m_pSessions)
 		{
 			if (!client->IsConnected())
 			{
@@ -301,10 +301,10 @@ void IOCPServer::senderThread()
 	}
 }
 
-void IOCPServer::closeSocket(ClientInfo* pClientInfo, bool isForce)
+void IOCPServer::closeSocket(Session* pSession, bool isForce)
 {
-	auto clientIndex = pClientInfo->GetIndex();
-	pClientInfo->Close(isForce);
+	auto clientIndex = pSession->GetIndex();
+	pSession->Close(isForce);
 
 	OnClose(clientIndex);
 }

@@ -5,14 +5,14 @@
 #include <vector>
 
 #include "Types.h"
-#include "ClientInfo.h"
+#include "Session.h"
 
 #define _UNUSED_PACKET_HEADER
 
 class IOCPServer
 {
 private:
-	std::vector<ClientInfo*>	m_pClientInfos;
+	std::vector<Session*>	m_pSessions;
 	std::vector<std::thread>	m_IOWorkerThreads;
 
 	SOCKET			m_listenSocket;
@@ -29,13 +29,13 @@ private:
 	bool createWorkerThread();
 	bool createAccepterThread();
 	bool createSenderThread();
-	ClientInfo* getEmptyClientInfo();
-	ClientInfo* getClientInfo(uint32_t sessionIndex);
+	Session* getEmptySession();
+	Session* getSession(uint32_t sessionIndex);
 
 	void workerThread();
 	void accepterThread();
 	void senderThread();
-	void closeSocket(ClientInfo* pClientInfo, bool isForce = false);
+	void closeSocket(Session* pSession, bool isForce = false);
 
 protected:
 	bool sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen);

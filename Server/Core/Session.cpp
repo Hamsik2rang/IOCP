@@ -1,54 +1,52 @@
-#include "ClientInfo.h"
+#include "Session.h"
 
 #include <iostream>
 
-ClientInfo::ClientInfo()
+Session::Session()
 {
 	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
-	ZeroMemory(&m_sendOverlappedEx, sizeof(OverlappedEx));
 	m_socket = INVALID_SOCKET;
-	m_bufPos = 0;
 }
 
-ClientInfo::ClientInfo(uint32_t index)
-	:ClientInfo()
+Session::Session(uint32_t index)
+	:Session()
 {
 	m_index = index;
 }
 
-ClientInfo::~ClientInfo()
+Session::~Session()
 {
 
 }
 
-void ClientInfo::InitIndex(uint32_t index)
+void Session::InitIndex(uint32_t index)
 {
 	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
 	m_socket = INVALID_SOCKET;
 	m_index = index;
 }
 
-uint32_t ClientInfo::GetIndex() const
+uint32_t Session::GetIndex() const
 {
 	return m_index;
 }
 
-bool ClientInfo::IsConnected() const
+bool Session::IsConnected() const
 {
 	return m_socket != INVALID_SOCKET;
 }
 
-SOCKET ClientInfo::GetSocket() const
+SOCKET Session::GetSocket() const
 {
 	return m_socket;
 }
 
-char* ClientInfo::RecvBuffer()
+char* Session::RecvBuffer()
 {
 	return m_recvBuf;
 }
 
-bool ClientInfo::OnConnect(HANDLE hIOCP, SOCKET socket)
+bool Session::OnConnect(HANDLE hIOCP, SOCKET socket)
 {
 	m_socket = socket;
 
@@ -60,7 +58,7 @@ bool ClientInfo::OnConnect(HANDLE hIOCP, SOCKET socket)
 	return BindRecv();
 }
 
-bool ClientInfo::BindIOCompletionPort(HANDLE hIOCP)
+bool Session::BindIOCompletionPort(HANDLE hIOCP)
 {
 	auto hResult = CreateIoCompletionPort((HANDLE)m_socket, hIOCP, (ULONG_PTR)this, 0);
 	if (hResult == INVALID_HANDLE_VALUE)
@@ -72,7 +70,7 @@ bool ClientInfo::BindIOCompletionPort(HANDLE hIOCP)
 	return true;
 }
 
-bool ClientInfo::BindRecv()
+bool Session::BindRecv()
 {
 	m_recvOverlappedEx.m_wsaBuf.len = MAX_SOCKBUF;
 	m_recvOverlappedEx.m_wsaBuf.buf = m_recvBuf;
@@ -99,23 +97,25 @@ bool ClientInfo::BindRecv()
 	return true;
 }
 
-bool ClientInfo::SendMsg(const char* pMsg, const uint32_t len)
+bool Session::SendMsg(const char* pMsg, const uint32_t len)
 {
+	auto sendOverlappedEx = new OverlappedEx();
+	ZeroMemory(sendOverlappedEx, sizeof(OverlappedEx));
+	sendOverlappedEx->m_wsaBuf.len = len;
+	sendOverlappedEx->m_wsaBuf.buf = new char[len];
+	CopyMemory(sendOverlappedEx->m_wsaBuf.buf, pMsg, len);
+	sendOverlappedEx->m_eOperation = eIOOperation::SEND;
+
 	std::lock_guard<std::mutex> lock(m_mutex);
-	if (m_bufPos + len > MAX_SENDBUF_SIZE)
-	{
-		m_bufPos = 0;	// Why?
-	}
-	CopyMemory(m_dataBuf, pMsg, len);
-	
-	m_bufPos += len;
+
+	m_pSendDataQueue.push(sendOverlappedEx);
 
 	return true;
 }
 
-bool ClientInfo::SendIO()
+bool Session::SendIO()
 {
-	if (0 >= m_bufPos || m_isSending)
+	if (m_isSending || m_pSendDataQueue.empty())
 	{
 		return false;
 	}
@@ -124,19 +124,16 @@ bool ClientInfo::SendIO()
 
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	CopyMemory(m_sendingBuf, m_dataBuf, m_bufPos);
-	m_sendOverlappedEx.m_wsaBuf.buf = m_sendingBuf;
-	m_sendOverlappedEx.m_wsaBuf.len = m_bufPos;
-	m_sendOverlappedEx.m_eOperation = eIOOperation::SEND;
-
+	auto sendOverlappedEx = m_pSendDataQueue.front();
+	m_pSendDataQueue.pop();
 	DWORD recvBytes(0);
 
 	int result = WSASend(m_socket,
-		&m_sendOverlappedEx.m_wsaBuf,
+		&sendOverlappedEx->m_wsaBuf,
 		1,
 		&recvBytes,
 		0,
-		&m_sendOverlappedEx.m_wsaOverlapped,
+		&sendOverlappedEx->m_wsaOverlapped,
 		nullptr);
 
 	if (result == SOCKET_ERROR && WSAGetLastError() != ERROR_IO_PENDING)
@@ -148,13 +145,13 @@ bool ClientInfo::SendIO()
 	return true;
 }
 
-void ClientInfo::OnSendComplete(DWORD byteTransferred)
+void Session::OnSendComplete(DWORD byteTransferred)
 {
 	std::cout << "Send :: " << byteTransferred << "Bytes" << "\n";
 	m_isSending = false;
 }
 
-void ClientInfo::Close(bool isForce)
+void Session::Close(bool isForce)
 {
 	linger socketLinger{ 0 };
 
