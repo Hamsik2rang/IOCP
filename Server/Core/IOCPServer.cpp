@@ -197,7 +197,7 @@ bool IOCPServer::sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen)
 void IOCPServer::workerThread()
 {
 	DWORD byteTransferred		(0);
-	Session* pSession		(nullptr);
+	Session* pSession			(nullptr);
 	LPOVERLAPPED lpOverlapped	(nullptr);
 
 	while (m_isWorkerRun)
@@ -240,8 +240,6 @@ void IOCPServer::workerThread()
 			// Overlapped Send 작업 후처리
 		case eIOOperation::SEND:
 			{
-				delete[] pOverlappedEx->m_wsaBuf.buf;
-				delete pOverlappedEx;
 				pSession->OnSendComplete(byteTransferred);
 			}
 			break;

@@ -99,7 +99,7 @@ bool Session::BindRecv()
 
 bool Session::SendMsg(const char* pMsg, const uint32_t len)
 {
-	auto pSendOverlappedEx = new OverlappedEx();
+	auto pSendOverlappedEx = new OverlappedEx;
 	ZeroMemory(pSendOverlappedEx, sizeof(OverlappedEx));
 	pSendOverlappedEx->m_wsaBuf.len = len;
 	pSendOverlappedEx->m_wsaBuf.buf = new char[len];
@@ -124,20 +124,21 @@ bool Session::SendIO()
 
 	std::lock_guard<std::mutex> lock(m_mutex);
 
-	auto sendOverlappedEx = m_pSendDataQueue.front();
+	auto pSendOverlappedEx = m_pSendDataQueue.front();
 	DWORD recvBytes(0);
 
+
 	int result = WSASend(m_socket,
-		&sendOverlappedEx->m_wsaBuf,
+		&(pSendOverlappedEx->m_wsaBuf),
 		1,
 		&recvBytes,
 		0,
-		&sendOverlappedEx->m_wsaOverlapped,
+		(LPWSAOVERLAPPED) & (pSendOverlappedEx->m_wsaOverlapped),
 		nullptr);
 
-	if (result == SOCKET_ERROR && WSAGetLastError() != ERROR_IO_PENDING)
+	if (result == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))
 	{
-		std::cerr << "Error :: WSASend()\n";
+		std::cerr << "Error :: WSASend()" << WSAGetLastError() << "\n";
 		return false;
 	}
 
@@ -147,16 +148,14 @@ bool Session::SendIO()
 void Session::OnSendComplete(DWORD byteTransferred)
 {
 	std::cout << "Send :: " << byteTransferred << "Bytes" << "\n";
+
 	std::lock_guard<std::mutex> lock(m_mutex);
+
 	auto pSendCompletedOverlappedEx = m_pSendDataQueue.front();
 	m_pSendDataQueue.pop();
 
-	if (pSendCompletedOverlappedEx)
-	{
-		delete[] pSendCompletedOverlappedEx->m_wsaBuf.buf;
-		delete pSendCompletedOverlappedEx;
-		pSendCompletedOverlappedEx = nullptr;
-	}
+	delete[] pSendCompletedOverlappedEx->m_wsaBuf.buf;
+	delete pSendCompletedOverlappedEx;
 
 	m_isSending = false;
 }
