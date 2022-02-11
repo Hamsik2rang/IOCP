@@ -7,6 +7,19 @@ IOCPServer::IOCPServer()
 
 IOCPServer::~IOCPServer()
 {
+	for (auto& client : m_pClientInfos)
+	{
+		if (nullptr != client)
+		{
+			if (client->IsConnected())
+			{
+				client->Close(true);
+			}
+			delete client;
+			client = nullptr;
+		}
+	}
+
 	WSACleanup();
 }
 
@@ -82,6 +95,12 @@ bool IOCPServer::StartServer(const uint32_t maxClientCount)
 		return false;
 	}
 
+	isSucceed = createSenderThread();
+	if (!isSucceed)
+	{
+		return false;
+	}
+
 	std::cout << "OK :: Server Run\n";
 
 	return true;
@@ -106,13 +125,19 @@ void IOCPServer::DestroyThread()
 	{
 		m_accepterThread.join();
 	}
+
+	m_isSenderRun = false;
+	if (m_senderThread.joinable())
+	{
+		m_senderThread.join();
+	}
 }
 
 void IOCPServer::createClient(const uint32_t maxClientCount)
 {
 	for (uint32_t i = 0; i < maxClientCount; ++i)
 	{
-		m_clientInfos.emplace_back(i);
+		m_pClientInfos.emplace_back(new ClientInfo(i));
 	}
 }
 
@@ -136,13 +161,21 @@ bool IOCPServer::createAccepterThread()
 	return true;
 }
 
+bool IOCPServer::createSenderThread()
+{
+	m_senderThread = std::thread([this]()->void { senderThread(); });
+	std::cout << "OK :: SenderTread Running\n";
+
+	return true;
+}
+
 ClientInfo* IOCPServer::getEmptyClientInfo()
 {
-	for (auto& client : m_clientInfos)
+	for (auto& client : m_pClientInfos)
 	{
-		if (!client.IsConnected())
+		if (!client->IsConnected())
 		{
-			return &client;
+			return client;
 		}
 	}
 
@@ -151,7 +184,7 @@ ClientInfo* IOCPServer::getEmptyClientInfo()
 
 ClientInfo* IOCPServer::getClientInfo(uint32_t sessionIndex)
 {
-	return &m_clientInfos[sessionIndex];
+	return m_pClientInfos[sessionIndex];
 }
 
 bool IOCPServer::sendMsg(uint32_t sessionIndex, char* pMsg, uint32_t msgLen)
@@ -256,19 +289,19 @@ void IOCPServer::senderThread()
 {
 	while (m_isSenderRun)
 	{
-		for (auto& client : m_clientInfos)
+		for (auto& client : m_pClientInfos)
 		{
-			if (!client.IsConnected())
+			if (!client->IsConnected())
 			{
 				continue;
 			}
-			client.SendIO();
+			client->SendIO();
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 }
 
-void IOCPServer::closeSocket(ClientInfo * pClientInfo, bool isForce)
+void IOCPServer::closeSocket(ClientInfo* pClientInfo, bool isForce)
 {
 	auto clientIndex = pClientInfo->GetIndex();
 	pClientInfo->Close(isForce);

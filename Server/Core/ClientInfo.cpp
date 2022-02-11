@@ -5,7 +5,9 @@
 ClientInfo::ClientInfo()
 {
 	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
+	ZeroMemory(&m_sendOverlappedEx, sizeof(OverlappedEx));
 	m_socket = INVALID_SOCKET;
+	m_bufPos = 0;
 }
 
 ClientInfo::ClientInfo(uint32_t index)
@@ -14,8 +16,15 @@ ClientInfo::ClientInfo(uint32_t index)
 	m_index = index;
 }
 
+ClientInfo::~ClientInfo()
+{
+
+}
+
 void ClientInfo::InitIndex(uint32_t index)
 {
+	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
+	m_socket = INVALID_SOCKET;
 	m_index = index;
 }
 
@@ -92,45 +101,58 @@ bool ClientInfo::BindRecv()
 
 bool ClientInfo::SendMsg(const char* pMsg, const uint32_t len)
 {
-	OverlappedEx* pSendOverlappedEx = new OverlappedEx;
-	ZeroMemory(pSendOverlappedEx, sizeof(OverlappedEx));
-	pSendOverlappedEx->m_wsaBuf.len = len;
-	pSendOverlappedEx->m_wsaBuf.buf = new char[len];
-	CopyMemory(pSendOverlappedEx->m_wsaBuf.buf, pMsg, len);
-	pSendOverlappedEx->m_eOperation = eIOOperation::SEND;
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if (m_bufPos + len > MAX_SENDBUF_SIZE)
+	{
+		m_bufPos = 0;	// Why?
+	}
+	CopyMemory(m_dataBuf, pMsg, len);
+	
+	m_bufPos += len;
+
+	return true;
+}
+
+bool ClientInfo::SendIO()
+{
+	if (0 >= m_bufPos || m_isSending)
+	{
+		return false;
+	}
+
+	m_isSending = true;
+
+	std::lock_guard<std::mutex> lock(m_mutex);
+
+	CopyMemory(m_sendingBuf, m_dataBuf, m_bufPos);
+	m_sendOverlappedEx.m_wsaBuf.buf = m_sendingBuf;
+	m_sendOverlappedEx.m_wsaBuf.len = m_bufPos;
+	m_sendOverlappedEx.m_eOperation = eIOOperation::SEND;
 
 	DWORD recvBytes(0);
 
 	int result = WSASend(m_socket,
-		&(pSendOverlappedEx->m_wsaBuf),
+		&m_sendOverlappedEx.m_wsaBuf,
 		1,
 		&recvBytes,
 		0,
-		&(pSendOverlappedEx->m_wsaOverlapped),
+		&m_sendOverlappedEx.m_wsaOverlapped,
 		nullptr);
 
-	if (SOCKET_ERROR == result && (WSAGetLastError() != ERROR_IO_PENDING))
+	if (result == SOCKET_ERROR && WSAGetLastError() != ERROR_IO_PENDING)
 	{
-		std::cerr << "Error :: WSASend() :: " << WSAGetLastError() << "\n";
+		std::cerr << "Error :: WSASend()\n";
 		return false;
 	}
 
 	return true;
 }
 
-void ClientInfo::SendIO()
-{
-	std::lock_guard<std::mutex> lock(m_mutex);
-
-
-
-}
-
 void ClientInfo::OnSendComplete(DWORD byteTransferred)
 {
 	std::cout << "Send :: " << byteTransferred << "Bytes" << "\n";
+	m_isSending = false;
 }
-
 
 void ClientInfo::Close(bool isForce)
 {

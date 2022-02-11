@@ -6,6 +6,7 @@
 
 constexpr uint32_t	MAX_SOCKBUF			= 1024; // 패킷 크기 
 constexpr uint32_t	MAX_WORKERTHREAD	= 4;	// 쓰레드 풀에 넣을 쓰레드 수
+constexpr int MAX_SENDBUF_SIZE = 2048;
 
 enum class eIOOperation
 {

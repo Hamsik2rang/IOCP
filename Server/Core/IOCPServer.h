@@ -12,7 +12,7 @@
 class IOCPServer
 {
 private:
-	std::vector<ClientInfo>		m_clientInfos;
+	std::vector<ClientInfo*>	m_pClientInfos;
 	std::vector<std::thread>	m_IOWorkerThreads;
 
 	SOCKET			m_listenSocket;
@@ -28,6 +28,7 @@ private:
 	void createClient(const uint32_t maxClientCount);
 	bool createWorkerThread();
 	bool createAccepterThread();
+	bool createSenderThread();
 	ClientInfo* getEmptyClientInfo();
 	ClientInfo* getClientInfo(uint32_t sessionIndex);
 
