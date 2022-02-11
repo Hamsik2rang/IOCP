@@ -22,13 +22,3 @@ struct OverlappedEx
 	WSABUF			m_wsaBuf;				//Overlapped I/O작업 버퍼
 	eIOOperation	m_eOperation;			//작업 동작 종류
 };
-
-////클라이언트 정보를 담기위한 구조체
-//struct ClientInfo
-//{
-//	SOCKET			m_socketClient			= INVALID_SOCKET;	//Cliet와 연결되는 소켓
-//	OverlappedEx	m_recvOverlappedEx		= { 0 };			//RECV Overlapped I/O작업을 위한 변수
-//	OverlappedEx	m_sendOverlappedEx		= { 0 };			//SEND Overlapped I/O작업을 위한 변수
-//	char			m_recvBuf[MAX_SOCKBUF]	= { 0 };
-//	char			m_sendBuf[MAX_SOCKBUF]	= { 0 };
-//};
