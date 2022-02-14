@@ -4,21 +4,23 @@
 #include <WS2tcpip.h>
 #include <cstdint>
 
-constexpr uint32_t	MAX_SOCKBUF			= 1024; // 패킷 크기 
-constexpr uint32_t	MAX_WORKERTHREAD	= 4;	// 쓰레드 풀에 넣을 쓰레드 수
-constexpr int MAX_SENDBUF_SIZE = 2048;
+constexpr uint32_t	MAX_SOCKBUF			= 1024; // Size of packet
+constexpr uint32_t	MAX_WORKERTHREAD	= 4;	// Size of Thread pool
+constexpr uint64_t	RE_USE_SESSION_WAIT_TIMESEC = 3;	// Time interval to reuse session
 
 enum class eIOOperation
 {
 	RECV = 0,
 	SEND,
+	ACCEPT,
 };
 
-//WSAOVERLAPPED구조체를 확장 시켜서 필요한 정보를 더 넣었다.
+// Extension of WSAOVERLAPPED structure to fill more informations needed.
 struct OverlappedEx
 {
-	WSAOVERLAPPED	m_wsaOverlapped;		//Overlapped I/O구조체
-	SOCKET			m_socketClient;			//클라이언트 소켓
-	WSABUF			m_wsaBuf;				//Overlapped I/O작업 버퍼
-	eIOOperation	m_eOperation;			//작업 동작 종류
+	WSAOVERLAPPED	m_wsaOverlapped;		// Overlapped I/O structure
+	SOCKET			m_socketClient;			// Client socket
+	WSABUF			m_wsaBuf;				// Overlapped I/O buffer
+	eIOOperation	m_eOperation;			// User-defined operation
+	uint32_t		m_sessionIndex;			// Session Index
 };

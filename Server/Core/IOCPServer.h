@@ -12,7 +12,7 @@
 class IOCPServer
 {
 private:
-	std::vector<Session*>	m_pSessions;
+	std::vector<Session*>		m_pSessions;
 	std::vector<std::thread>	m_IOWorkerThreads;
 
 	SOCKET			m_listenSocket;
@@ -31,7 +31,7 @@ private:
 	bool createSenderThread();
 	Session* getEmptySession();
 	Session* getSession(uint32_t sessionIndex);
-
+	
 	void workerThread();
 	void accepterThread();
 	void senderThread();

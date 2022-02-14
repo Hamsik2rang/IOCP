@@ -1,6 +1,11 @@
+#pragma comment(lib,"mswsock.lib")
+#define NOMINMAX
+
 #include "Session.h"
 
+#include <MSWSock.h>
 #include <iostream>
+#include <numeric>
 
 Session::Session()
 {
@@ -8,10 +13,11 @@ Session::Session()
 	m_socket = INVALID_SOCKET;
 }
 
-Session::Session(uint32_t index)
+Session::Session(uint32_t index, HANDLE hIOCP)
 	:Session()
 {
 	m_index = index;
+	m_hIOCP = hIOCP;
 }
 
 Session::~Session()
@@ -19,16 +25,85 @@ Session::~Session()
 
 }
 
-void Session::InitIndex(uint32_t index)
+void Session::InitIndex(uint32_t index, HANDLE hIOCP)
 {
 	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
 	m_socket = INVALID_SOCKET;
 	m_index = index;
+	m_hIOCP = hIOCP;
+}
+
+uint64_t Session::GetLastClosedTimeSec() const
+{
+	return m_latestClosedTimeSec;
 }
 
 uint32_t Session::GetIndex() const
 {
 	return m_index;
+}
+
+bool Session::PostAccept(SOCKET listenSocket, const uint64_t curTimeSec)
+{
+	std::cout << "PostAccept :: Client Index : " << GetIndex() << "\n";
+	
+	m_latestClosedTimeSec = std::numeric_limits<uint64_t>::max();
+
+	// IPPROTO_TCP vs IPPROTO_IP ??
+	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	if (INVALID_SOCKET == m_socket)
+	{
+		std::cerr << "Error :: Client Socket WSASocket() Error : " << WSAGetLastError() << "\n";
+		return false;
+	}
+
+	ZeroMemory(&m_acceptContext, sizeof(OverlappedEx));
+
+	DWORD bytes(0);
+	DWORD flags(0);
+	m_acceptContext.m_wsaBuf.buf = nullptr;
+	m_acceptContext.m_wsaBuf.len = 0;
+	m_acceptContext.m_eOperation = eIOOperation::ACCEPT;
+	m_acceptContext.m_sessionIndex = m_index;
+
+	//AcceptEx
+	if (false == AcceptEx(listenSocket,
+		m_socket,
+		m_acceptBuf,
+		0,
+		sizeof(SOCKADDR_IN) + 16,
+		sizeof(SOCKADDR_IN) + 16,
+		&bytes,
+		&m_acceptContext.m_wsaOverlapped))
+	{
+		if (WSAGetLastError() != ERROR_IO_PENDING)
+		{
+			std::cerr << "Error :: AcceptEx() :: " << WSAGetLastError() << "\n";
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Session::OnAcceptComplete()
+{
+	// Print
+	std::cout << "OnAcceptComplete :: SessionIndex(" << m_index << ")\n";
+
+	if (!OnConnect(m_hIOCP, m_socket))
+	{
+		return false;
+	}
+
+	SOCKADDR_IN clientAddr{};
+	int addrLen = sizeof(SOCKADDR_IN);
+	char clientIP[32]{0};
+
+	inet_ntop(AF_INET, &clientAddr.sin_addr.s_addr, clientIP, sizeof(clientIP) - 1);
+	std::cout << "Connect :: IP : " << clientIP << " :: SOCKET : " << (int)m_socket;
+	
+	return true;
 }
 
 bool Session::IsConnected() const
@@ -171,6 +246,8 @@ void Session::Close(bool isForce)
 
 	shutdown(m_socket, SD_BOTH);
 	setsockopt(m_socket, SOL_SOCKET, SO_LINGER, (const char*)&socketLinger, sizeof(socketLinger));
+
+	m_latestClosedTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 
 	closesocket(m_socket);
 	m_socket = INVALID_SOCKET;

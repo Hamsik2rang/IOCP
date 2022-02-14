@@ -137,7 +137,7 @@ void IOCPServer::createClient(const uint32_t maxClientCount)
 {
 	for (uint32_t i = 0; i < maxClientCount; ++i)
 	{
-		m_pSessions.emplace_back(new Session(i));
+		m_pSessions.emplace_back(new Session(i, m_hIOCP));
 	}
 }
 
@@ -220,17 +220,34 @@ void IOCPServer::workerThread()
 			continue;
 		}
 
+		OverlappedEx* pOverlappedEx = (OverlappedEx*)lpOverlapped;
+
 		// Client가 접속 종료
-		if (false == isSucceed || (true == isSucceed && 0 == byteTransferred))
+		if (false == isSucceed || (pOverlappedEx->m_eOperation != eIOOperation::ACCEPT && 0 == byteTransferred))
 		{
 			closeSocket(pSession);
 			continue;
 		}
 
-		OverlappedEx* pOverlappedEx = (OverlappedEx*)lpOverlapped;
 		switch (pOverlappedEx->m_eOperation)
 		{
 			// Overlapped Receive 작업 후처리
+		case eIOOperation::ACCEPT:
+			{
+				// TODO: Implement this.
+				pSession = getSession(pOverlappedEx->m_sessionIndex);
+				if (pSession->OnAcceptComplete())
+				{
+					++m_clientCount;
+					
+					OnConnect(pSession->GetIndex());
+				}
+				else
+				{
+					closeSocket(pSession, true);
+				}
+			}
+			break;
 		case eIOOperation::RECV:
 			{
 				OnReceive(pSession->GetIndex(), byteTransferred, pSession->RecvBuffer());
@@ -255,31 +272,30 @@ void IOCPServer::workerThread()
 
 void IOCPServer::accepterThread()
 {
-	SOCKADDR_IN clientAddr;
-	socklen_t clientAddrLen = (socklen_t)sizeof(clientAddr);
-
 	while (m_isAccepterRun)
 	{
-		Session* pSession = getEmptySession();
-		if (!pSession)
-		{
-			std::cerr << "Error :: Client Full\n";
-			break;
-		}
+		auto curTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 
-		auto clientSocket = accept(m_listenSocket, (SOCKADDR*)&clientAddr, &clientAddrLen);
-		if (INVALID_SOCKET == clientSocket)
+		for (auto client : m_pSessions)
 		{
-			continue;
-		}
+			if (client->IsConnected())
+			{
+				continue;
+			}
 
-		if (false == pSession->OnConnect(m_hIOCP, clientSocket))
-		{
-			pSession->Close(true);
-			break;
+			if ((uint64_t)curTimeSec < client->GetLastClosedTimeSec())
+			{
+				continue;
+			}
+
+			auto diff = curTimeSec - client->GetLastClosedTimeSec();
+			if (diff <= RE_USE_SESSION_WAIT_TIMESEC)
+			{
+				continue;
+			}
+
+			client->PostAccept(m_listenSocket, curTimeSec);
 		}
-		OnConnect(pSession->GetIndex());
-		++m_clientCount;
 	}
 }
 
