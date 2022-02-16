@@ -67,6 +67,18 @@ bool IOCPServer::BindandListen(int bindPort)
 		return false;
 	}
 
+	m_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, MAX_WORKERTHREAD);
+	if (!m_hIOCP)
+	{
+		std::cerr << "Error :: CreateIOCompletionPort() :: " << WSAGetLastError() << "\n";
+		return false;
+	}
+	auto hTempIOCP = CreateIoCompletionPort((HANDLE)m_listenSocket, m_hIOCP, 0, 0);
+	if (!hTempIOCP)
+	{
+		std::cerr << "Error :: listen socket IOCP bind falied :: " << WSAGetLastError() << "\n";
+	}
+
 	std::cout << "OK :: Sever Registration\n";
 
 	return true;
@@ -75,13 +87,6 @@ bool IOCPServer::BindandListen(int bindPort)
 bool IOCPServer::StartServer(const uint32_t maxClientCount)
 {
 	createClient(maxClientCount);
-
-	m_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, MAX_WORKERTHREAD);
-	if (!m_hIOCP)
-	{
-		std::cerr << "Error :: CreateIOCompletionPort() :: " << WSAGetLastError() << "\n";
-		return false;
-	}
 
 	bool isSucceed = createWorkerThread();
 	if (!isSucceed)
@@ -148,7 +153,7 @@ bool IOCPServer::createWorkerThread()
 		m_IOWorkerThreads.emplace_back([this]()->void { workerThread(); });
 	}
 
-	std::cout << "OK :: WokrerThread Running\n";
+	std::cout << "OK :: WorkerThread Running\n";
 
 	return true;
 }
@@ -205,7 +210,7 @@ void IOCPServer::workerThread()
 		bool isSucceed = GetQueuedCompletionStatus(m_hIOCP,
 			&byteTransferred, 
 			(PULONG_PTR)&pSession, 
-			&lpOverlapped, 
+			&lpOverlapped,
 			INFINITE);
 
 		// 쓰레드 종료

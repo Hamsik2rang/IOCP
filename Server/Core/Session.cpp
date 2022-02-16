@@ -11,6 +11,7 @@ Session::Session()
 {
 	ZeroMemory(&m_recvOverlappedEx, sizeof(OverlappedEx));
 	m_socket = INVALID_SOCKET;
+	m_latestClosedTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 Session::Session(uint32_t index, HANDLE hIOCP)
@@ -18,12 +19,11 @@ Session::Session(uint32_t index, HANDLE hIOCP)
 {
 	m_index = index;
 	m_hIOCP = hIOCP;
+	m_latestClosedTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 Session::~Session()
-{
-
-}
+{}
 
 void Session::InitIndex(uint32_t index, HANDLE hIOCP)
 {
@@ -31,6 +31,7 @@ void Session::InitIndex(uint32_t index, HANDLE hIOCP)
 	m_socket = INVALID_SOCKET;
 	m_index = index;
 	m_hIOCP = hIOCP;
+	m_latestClosedTimeSec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 uint64_t Session::GetLastClosedTimeSec() const
@@ -49,8 +50,7 @@ bool Session::PostAccept(SOCKET listenSocket, const uint64_t curTimeSec)
 	
 	m_latestClosedTimeSec = std::numeric_limits<uint64_t>::max();
 
-	// IPPROTO_TCP vs IPPROTO_IP ??
-	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	m_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == m_socket)
 	{
 		std::cerr << "Error :: Client Socket WSASocket() Error : " << WSAGetLastError() << "\n";
@@ -208,7 +208,7 @@ bool Session::SendIO()
 		1,
 		&recvBytes,
 		0,
-		(LPWSAOVERLAPPED) & (pSendOverlappedEx->m_wsaOverlapped),
+		&(pSendOverlappedEx->m_wsaOverlapped),
 		nullptr);
 
 	if (result == SOCKET_ERROR && (WSAGetLastError() != ERROR_IO_PENDING))

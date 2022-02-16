@@ -5,7 +5,7 @@
 #include <string>
 
 const uint16_t SERVER_PORT = 11021;
-const uint32_t MAX_CLIENT = 100;		//총 접속할수 있는 클라이언트 수
+const uint32_t MAX_CLIENT = 3;		//총 접속할수 있는 클라이언트 수
 
 int main()
 {
