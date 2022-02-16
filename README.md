@@ -2,7 +2,7 @@
 IOCP Chatting Server  
 
 ## NOTICE!!! 
-***This project is in progress!*** *Many of features that you are expecting is* ***not implemented.***
+***This project is in progress!*** *Many of features that you are expecting is* ***not implemented yet.***
   
 ## Dependencies
 * **Only Windows Platform**
@@ -15,5 +15,5 @@ IOCP Chatting Server
 * Echo Server --- Implemented.
 * Log In --- In progress..
 * Make Chatting Room --- In progress...
-* Save User info and chatting info using Database(Redis) --- In progress...
+* Save User info and chatting info using DB --- In progress...
 * To be added...
