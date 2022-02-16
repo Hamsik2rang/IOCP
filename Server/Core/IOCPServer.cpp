@@ -73,8 +73,8 @@ bool IOCPServer::BindandListen(int bindPort)
 		std::cerr << "Error :: CreateIOCompletionPort() :: " << WSAGetLastError() << "\n";
 		return false;
 	}
-	auto hTempIOCP = CreateIoCompletionPort((HANDLE)m_listenSocket, m_hIOCP, 0, 0);
-	if (!hTempIOCP)
+	auto hResult = CreateIoCompletionPort((HANDLE)m_listenSocket, m_hIOCP, 0, 0);
+	if (!hResult)
 	{
 		std::cerr << "Error :: listen socket IOCP bind falied :: " << WSAGetLastError() << "\n";
 	}
