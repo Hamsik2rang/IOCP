@@ -4,7 +4,7 @@ IOCP Chatting Server
 ## NOTICE!!! 
 ***This project is in progress!*** *Many of features that you are expecting is* ***not implemented.***
   
-## dependencies
+## Dependencies
 * Only Windows Platform
 * CMake (*version 3.21 or above*)
 * Visual Studio 2019 or 2022
