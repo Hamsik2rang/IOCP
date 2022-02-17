@@ -24,3 +24,4 @@ struct OverlappedEx
 	eIOOperation	m_eOperation;			// User-defined operation
 	uint32_t		m_sessionIndex;			// Session Index
 };
+
