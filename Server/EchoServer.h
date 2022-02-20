@@ -3,8 +3,8 @@
 #include <queue>
 #include <mutex>
 
-#include "./Core/IOCPServer.h"
-#include "./Core/Packet.hpp"
+#include "./Core/Network/IOCPServer.h"
+#include "./Core/Packet/Packet.h"
 
 
 class EchoServer : public IOCPServer
@@ -26,4 +26,3 @@ public:
 	void Run(uint32_t maxClient);
 	void End();
 };
-
