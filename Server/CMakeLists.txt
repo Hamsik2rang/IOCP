@@ -6,6 +6,7 @@ add_executable(Server
 	main.cpp 
 	EchoServer.cpp
 
-	./Core/IOCPServer.cpp
-	"Core/Session.cpp"
-)
+	"Core/Network/IOCPServer.cpp" 
+	"Core/Session/Session.cpp" 
+	"Core/Packet/Packet.h" 
+	"Core/Packet/PacketManager.cpp")
