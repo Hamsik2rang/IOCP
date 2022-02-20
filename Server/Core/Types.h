@@ -4,8 +4,8 @@
 #include <WS2tcpip.h>
 #include <cstdint>
 
-constexpr uint32_t	MAX_SOCKBUF			= 1024; // Size of packet
-constexpr uint32_t	MAX_WORKERTHREAD	= 4;	// Size of Thread pool
+constexpr uint32_t	MAX_SOCKBUF				= 1024;		// Size of packet
+constexpr uint32_t	MAX_WORKERTHREAD		= 4;		// Size of Thread pool
 constexpr uint64_t	RE_USE_SESSION_WAIT_TIMESEC = 3;	// Time interval to reuse session
 
 enum class eIOOperation

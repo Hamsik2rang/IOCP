@@ -4,10 +4,8 @@
 #include <thread>
 #include <vector>
 
-#include "Types.h"
-#include "Session.h"
-
-#define _UNUSED_PACKET_HEADER
+#include "../Types.h"
+#include "../Session/Session.h"
 
 class IOCPServer
 {
