@@ -70,9 +70,22 @@ void Renderer::Render()
 	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 
 	if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+	{
 		counter++;
+	}
 	ImGui::SameLine();
 	ImGui::Text("counter = %d", counter);
+
+	if(ImGui::BeginTable("test", 2))
+	{
+		ImGui::TableNextColumn(); ImGui::InputTextMultiline("Chat", (char*)"", 0, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 22), ImGuiInputTextFlags_ReadOnly);
+		ImGui::TableNextColumn();
+		ImGui::Text("(0,0)");
+		ImGui::Text("(0,1)");
+		ImGui::Text("(1,0)");
+		ImGui::EndTable();
+	}
+
 
 	ImGui::End();
 
