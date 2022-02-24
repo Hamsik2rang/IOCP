@@ -1,5 +1,10 @@
 #include "Direct3D.h"
 
+Direct3D::~Direct3D()
+{
+    CleanupDevice();
+}
+
 bool Direct3D::Init(HWND hWnd)
 {
     m_hWnd = hWnd;
@@ -32,7 +37,6 @@ void Direct3D::Render()
 
 void Direct3D::Shutdown()
 {
-    ImGui_ImplDX11_Shutdown();
     CleanupDevice();
 }
 

@@ -29,6 +29,7 @@ void Renderer::SetupContext(HWND hWnd)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontFromFileTTF("./assets/fonts/OpenSans/OpenSans-Regular.ttf", 18.0f);
 	(void)io;
 
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -62,8 +63,7 @@ void Renderer::Render()
 	ImGui::NewFrame();
 
 	UpdateRenderPos();
-	
-	
+		
 	ImGui::Begin("Chatting Client", nullptr, m_windowFlags);
 	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
@@ -88,9 +88,10 @@ void Renderer::Render()
 
 void Renderer::Shutdown()
 {
-	m_pd3d->Shutdown();
+	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+	m_pd3d->Shutdown();
 }
 
 
