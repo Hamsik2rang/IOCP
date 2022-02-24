@@ -9,6 +9,9 @@ class Renderer
 private:
 	HWND m_hWnd;
 	Direct3D* m_pd3d;
+	ImGuiWindowFlags m_windowFlags;
+
+	
 
 public:
 	~Renderer();

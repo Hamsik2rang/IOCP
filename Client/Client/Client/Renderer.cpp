@@ -7,10 +7,6 @@ void Renderer::UpdateRenderPos()
 	::ClientToScreen(m_hWnd, (POINT*)&rcView.left);
 	::ClientToScreen(m_hWnd, (POINT*)&rcView.right);
 
-	//ImGuiViewport* viewport = ImGui::GetWindowViewport();
-	//ImVec2 vpCenter = viewport->GetWorkCenter();
-	//ImVec2 displaySize = ImGui::GetIO().DisplaySize;
-	//ImVec2 vpLeftTop = { vpCenter.x - (displaySize.x / 2), vpCenter.y - (displaySize.y)/2};
 	ImGui::SetNextWindowPos({(float)rcView.left, (float)rcView.top});
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
 }
@@ -38,6 +34,10 @@ void Renderer::SetupContext(HWND hWnd)
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+	m_windowFlags |= ImGuiWindowFlags_NoResize;
+	m_windowFlags |= ImGuiWindowFlags_NoMove;
+	m_windowFlags |= ImGuiWindowFlags_NoTitleBar;
+
 	ImGui::StyleColorsLight();
 
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -63,7 +63,8 @@ void Renderer::Render()
 
 	UpdateRenderPos();
 	
-	ImGui::Begin("Chatting Client", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	
+	ImGui::Begin("Chatting Client", nullptr, m_windowFlags);
 	ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
 
 	ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
