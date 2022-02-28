@@ -4,9 +4,10 @@
 #include "./ImGui/imgui_impl_win32.h"
 
 #include <string>
+#include <regex>
 
 // Wrapping ImGui InputText function to print Korean.
-struct ResizeCallback
+struct CustomCallback
 {
 	static int InputCallback(ImGuiInputTextCallbackData* data)
 	{
@@ -23,12 +24,23 @@ struct ResizeCallback
 		return 0;
 	}
 
-	static bool MyInputTextMultiline(const char* label, std::string* str, const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0)
+	static bool StringInputTextMultiline(const char* label, std::string* str, const ImVec2& size = ImVec2(0, 0), ImGuiInputTextFlags flags = 0)
 	{
 		IM_ASSERT((flags & ImGuiInputTextFlags_CallbackResize) == 0);
-		return ImGui::InputTextMultiline(label, (char*)str->c_str(), (size_t)str->size(), size, flags | ImGuiInputTextFlags_CallbackResize, ResizeCallback::InputCallback, (void*)str);
+		return ImGui::InputTextMultiline(label, (char*)str->c_str(), (size_t)str->size(), size, flags | ImGuiInputTextFlags_CallbackResize, CustomCallback::InputCallback, (void*)str);
+	}
+
+	static int FilterIPString(ImGuiInputTextCallbackData* data)
+	{
+		if ((data->EventChar < '0' || data->EventChar> '9') && data->EventChar != '.')
+		{
+			return 1;
+		}
+		return 0;
 	}
 };
+
+
 
 class Renderer
 {

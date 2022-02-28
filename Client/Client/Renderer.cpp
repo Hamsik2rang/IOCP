@@ -87,9 +87,20 @@ void Renderer::Render()
 		ImGui::EndTable();
 	}*/
 	
-
-	ImGui::Text(u8"제작: Im Yongsik");               // Display some text (you can use a format strings too)
-	ImGui::Text(u8"Username : 햄식");
+	if (ImGui::BeginTable("Connect Table", 3))
+	{
+		static char serverIP[16] = "127.0.0.1";
+		static char serverPort[6] = "11201";
+		ImGui::TableNextColumn(); ImGui::InputText("IP", serverIP, 16,ImGuiInputTextFlags_CallbackCharFilter, CustomCallback::FilterIPString);
+		ImGui::TableNextColumn(); ImGui::InputText("PORT", serverPort, 6, ImGuiInputTextFlags_CharsDecimal);
+		ImGui::TableNextColumn();
+		if (ImGui::Button(u8"접속"))
+		{
+			//TODO: 서버 접속
+		}
+		ImGui::EndTable();
+	}
+	ImGui::Text(u8"이름 : 햄식");
 	//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 
 	//if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
@@ -102,7 +113,7 @@ void Renderer::Render()
 	{
 		m_chatString = u8"[햄식]오늘 저녁은 해씨다!\n[꼬미]햄식아 밤에 쳇바퀴좀 안타면 안되겠니?\n너 때문에 잠을 못자겠어!\n[햄식]나 담달 15일에 바프 찍어야 돼.\n그 때까지만 참아!";
 	}
-	ResizeCallback::MyInputTextMultiline("Chat", &m_chatString, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 24), ImGuiInputTextFlags_ReadOnly | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+	CustomCallback::StringInputTextMultiline("Chat", &m_chatString, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 24), ImGuiInputTextFlags_ReadOnly | ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	if (ImGui::BeginTable("Input Table", 2))
 	{
 		ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 300.0f);
@@ -112,7 +123,7 @@ void Renderer::Render()
 			m_inputString.push_back('\0');
 		}
 		
-		ImGui::TableNextColumn(); ResizeCallback::MyInputTextMultiline("Input", &m_inputString, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 4.8));
+		ImGui::TableNextColumn(); CustomCallback::StringInputTextMultiline("Input", &m_inputString, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 4.8));
 		ImGui::TableNextColumn(); 
 		if (ImGui::Button("Enter", ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 4.8)))
 		{
